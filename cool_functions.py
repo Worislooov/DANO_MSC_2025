@@ -5,6 +5,12 @@ import seaborn as sns
 from scipy import stats
 
 
+'''
+ОТСЮДА МОЖНО ИМПОРТИТЬ ФУНКЦИИ
+ЕСЛИ БУДЕТ ЕЩЁ ЧТО-НИБУДЬ ПОЛЕЗНОЕ МОЖНО ДОБАВЛЯТЬ СЮДА (пока здесь 12 функций)
+'''
+
+
 # 1. Функция для быстрого просмотра статистики данных
 def quick_stats(df):
     print("═"*50)
@@ -139,13 +145,69 @@ def plot_pairwise_heatmap(df, group_col, value_col, figsize=(12, 8)):
     sns.heatmap(pivot_table, annot=True, fmt=".1f", cmap="viridis")
     plt.title(f'Pairwise {value_col} Comparison')
     plt.show()
+    
+# 0. Вызов всего
+def do_all(df):
+    # 1. Быстрая статистика
+    quick_stats(df)
+
+    # 2. Визуализация распределений числовых колонок
+    numerical_cols = df.select_dtypes(include=['number']).columns.tolist()
+    plot_distributions(df, numerical_cols)
+
+    # 3. Матрица корреляций
+    plot_correlation_matrix(df, numerical_cols)
+
+    # 4. Анализ категориальных данных
+    categorical_cols = df.select_dtypes(include=['object', 'category']).columns.tolist()
+    if categorical_cols:
+        analyze_categorical(df, categorical_cols)
+    else:
+        print("No categorical columns found")
+
+    # 5. Boxplot для связи категорий и числовых значений
+    if categorical_cols and numerical_cols:
+        plot_category_boxplots(df, numerical_cols[0], categorical_cols[0])
+        
+    # 6. Поиск выбросов
+    outliers_df = detect_outliers_iqr(df, numerical_cols)
+    print("\nOutlier Analysis:")
+    print(outliers_df)
+
+    # 7. Парные диаграммы рассеяния
+    if len(numerical_cols) > 1:
+        plot_scatter_matrix(df, numerical_cols[:4])  # Первые 4 числовые колонки
+
+    # 8. Анализ временных рядов (если есть datetime колонка)
+    date_col = 'Date'  # Укажите вашу колонку с датами
+    if date_col in df.columns:
+        analyze_time_series(df, date_col, numerical_cols[0], freq='W')
+    else:
+        print(f"Column '{date_col}' not found for time series analysis")
+
+    # 9. T-тест для сравнения групп
+    group_col = 'Category'  # Укажите вашу категориальную колонку
+    value_col = 'Revenue'   # Укажите числовую колонку для сравнения
+    if group_col in df.columns and value_col in df.columns:
+        groups = df[group_col].unique()[:2]  # Берем первые две группы
+        perform_t_test(df, group_col, value_col, groups[0], groups[1])
+
+    # 10. Круговая диаграмма
+    if categorical_cols:
+        plot_pie_chart(df, categorical_cols[0], limit=0.05)
+
+    # 11. Генерация полного отчета
+    # Требует установки: pip install pandas-profiling
+    generate_profiling_report(df, title='Example Data Report', file_name='data_report.html')
+
+    # 12. Анализ парных взаимодействий
+    if categorical_cols and numerical_cols:
+        plot_pairwise_heatmap(df, categorical_cols[0], numerical_cols[0])
+        
 
 # Пример использования:
 if __name__ == "__main__":
     # Загрузка данных
     df = pd.read_excel('data/example.xlsx')
     
-    # Вызов функций
-    quick_stats(df)
-    plot_distributions(df, df.select_dtypes(include=np.number).columns.tolist())
-    plot_correlation_matrix(df, df.select_dtypes(include=np.number).columns.tolist())
+    do_all(df)
