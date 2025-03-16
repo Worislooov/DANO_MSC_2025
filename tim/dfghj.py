@@ -5,28 +5,38 @@ import matplotlib.pyplot as plt
 # Загружаем данные
 df = pd.read_excel('data.xlsx')
 
-# Группируем данные по skill_group и рассчитываем среднее значение skill_group_exp
-mean_skill_group_exp_by_skill_group = df.groupby('skill_group')['skill_group_exp'].mean().reset_index()
+# Рассчитываем эффективность
+df['efficiency'] = (
+    df['useful_chats_fact'] + df['useful_calls_fact'] + 
+    df['avail_chat_call_fact'] + df['avail_chats_fact'] + 
+    df['avail_calls_fact'] + df['education_fact']
+) / df['all_system_fact']
 
-# Сортируем данные по опыту для лучшей визуализации
-mean_skill_group_exp_by_skill_group = mean_skill_group_exp_by_skill_group.sort_values(by='skill_group_exp', ascending=False)
+# Удаляем строки с нулевыми значениями в знаменателе (если all_system_fact = 0)
+df = df[df['all_system_fact'] > 0]
+
+# Группируем данные по grafik и рассчитываем среднее значение эффективности
+mean_efficiency_by_grafik = df.groupby('grafik')['efficiency'].mean().reset_index()
+
+# Сортируем данные по эффективности для лучшей визуализации
+mean_efficiency_by_grafik = mean_efficiency_by_grafik.sort_values(by='efficiency', ascending=False)
 
 # Выводим результат группировки
-print(mean_skill_group_exp_by_skill_group)
+print(mean_efficiency_by_grafik)
 
 # Строим barplot
 plt.figure(figsize=(12, 6))  # Размер графика
 sns.barplot(
-    x='skill_group',          # Ось X: скилл-группа
-    y='skill_group_exp',      # Ось Y: средний опыт в скилл-группе
-    data=mean_skill_group_exp_by_skill_group,  # Данные
-    palette='viridis'         # Цветовая палитра
+    x='grafik',          # Ось X: график работы
+    y='efficiency',      # Ось Y: средняя эффективность
+    data=mean_efficiency_by_grafik,  # Данные
+    palette='viridis'    # Цветовая палитра
 )
 
 # Добавляем заголовок и подписи осей
-plt.title('Средний опыт в скилл-группе по группам', fontsize=16)
-plt.xlabel('Скилл-группа', fontsize=12)
-plt.ylabel('Средний опыт в скилл-группе (месяцы)', fontsize=12)
+plt.title('Средняя эффективность по графикам работы', fontsize=16)
+plt.xlabel('График работы', fontsize=12)
+plt.ylabel('Средняя эффективность', fontsize=12)
 
 # Добавляем сетку для удобства восприятия
 plt.grid(True, linestyle='--', alpha=0.7)
